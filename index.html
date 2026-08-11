@@ -192,14 +192,8 @@
                 mapa.removeLayer(rutaActual);
             }
 
-            const url =
-                "https://router.project-osrm.org/route/v1/driving/" +
-                origen.coordenadas[1] + "," +
-                origen.coordenadas[0] + ";" +
-                nuevaSede[1] + "," +
-                nuevaSede[0] +
-                "?overview=full&geometries=geojson";
-
+const url =
+    `https://router.project-osrm.org/route/v1/driving/${origen.coordenadas[1]},${origen.coordenadas[0]};${nuevaSede[1]},${nuevaSede[0]}?overview=full&geometries=geojson`;
             try {
 
                 const respuesta = await fetch(url);
