@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>ABAI – Nueva sede Surco</title>
+
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .encabezado {
+            background: white;
+            text-align: center;
+            padding: 25px 15px;
+        }
+
+        .encabezado h1 {
+            margin: 0 0 8px;
+            font-size: 28px;
+        }
+
+        .encabezado p {
+            margin: 0;
+            font-size: 16px;
+        }
+
+        #mapa {
+            width: 100%;
+            height: 70vh;
+            min-height: 500px;
+        }
+
+        .rutas {
+            background: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .rutas h2 {
+            margin-top: 0;
+            font-size: 22px;
+        }
+
+        .boton {
+            display: inline-block;
+            margin: 6px;
+            padding: 12px 18px;
+            border-radius: 25px;
+            background: #333;
+            color: white;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            font-size: 14px;
+        }
+
+        .boton:hover {
+            opacity: 0.85;
+        }
+
+        @media (max-width: 600px) {
+            #mapa {
+                height: 65vh;
+                min-height: 450px;
+            }
+
+            .encabezado h1 {
+                font-size: 23px;
+            }
+
+            .boton {
+                width: 90%;
+                max-width: 300px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="encabezado">
+        <h1>ABAI – Nueva sede Surco</h1>
+        <p>Av. Primavera 2142, Surco</p>
+        <p>Referencia: costado de Santillana</p>
+    </div>
+
+    <div id="mapa"></div>
+
+    <div class="rutas">
+        <h2>¿Desde dónde vienes?</h2>
+
+        <button class="boton" onclick="mostrarRuta('plazaNorte')">
+            Desde Plaza Norte
+        </button>
+
+        <button class="boton" onclick="mostrarRuta('mallSur')">
+            Desde Mall del Sur
+        </button>
+
+        <button class="boton" onclick="mostrarRuta('plazaSanMartin')">
+            Desde Plaza San Martín
+        </button>
+
+        <button class="boton" onclick="mostrarRuta('metroSJL')">
+            Desde Metro de SJL
+        </button>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+
+        const nuevaSede = [-12.105566, -76.965788];
+
+        const puntos = {
+
+            plazaNorte: {
+                nombre: "Plaza Norte",
+                coordenadas: [-12.006707, -77.061152]
+            },
+
+            mallSur: {
+                nombre: "Mall del Sur",
+                coordenadas: [-12.154872, -76.9822692]
+            },
+
+            plazaSanMartin: {
+                nombre: "Plaza San Martín",
+                coordenadas: [-12.0510814, -77.0356563]
+            },
+
+            metroSJL: {
+                nombre: "Metro de SJL",
+                coordenadas: [-12.0060801, -77.0047883]
+            }
+
+        };
+
+        const mapa = L.map("mapa").setView(nuevaSede, 12);
+
+        L.tileLayer(
+            "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+            {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap contributors'
+            }
+        ).addTo(mapa);
+
+        const marcadorSede = L.marker(nuevaSede)
+            .addTo(mapa)
+            .bindPopup(
+                "<strong>ABAI – Nueva sede Surco</strong><br>" +
+                "Av. Primavera 2142<br>" +
+                "Costado de Santillana"
+            )
+            .openPopup();
+
+        const marcadores = {};
+
+        for (const clave in puntos) {
+
+            const punto = puntos[clave];
+
+            marcadores[clave] = L.marker(punto.coordenadas)
+                .addTo(mapa)
+                .bindPopup("<strong>" + punto.nombre + "</strong>");
+
+        }
+
+        let rutaActual = null;
+
+        async function mostrarRuta(clave) {
+
+            const origen = puntos[clave];
+
+            if (rutaActual) {
+                mapa.removeLayer(rutaActual);
+            }
+
+            const url =
+                "https://router.project-osrm.org/route/v1/driving/" +
+                origen.coordenadas[1] + "," +
+                origen.coordenadas[0] + ";" +
+                nuevaSede[1] + "," +
+                nuevaSede[0] +
+                "?overview=full&geometries=geojson";
+
+            try {
+
+                const respuesta = await fetch(url);
+
+                const datos = await respuesta.json();
+
+                if (datos.code !== "Ok") {
+                    alert("No se pudo calcular la ruta.");
+                    return;
+                }
+
+                rutaActual = L.geoJSON(
+                    datos.routes[0].geometry
+                ).addTo(mapa);
+
+                mapa.fitBounds(rutaActual.getBounds(), {
+                    padding: [30, 30]
+                });
+
+            } catch (error) {
+
+                alert("No se pudo cargar la ruta. Intenta nuevamente.");
+
+            }
+
+        }
+
+    </script>
+
+</body>
+</html>
